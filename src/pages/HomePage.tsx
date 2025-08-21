@@ -1,59 +1,75 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, CheckCircle, Users, Award, Clock } from 'lucide-react';
+import { getHomeStats, getHomeTestimonials, getHomeServices } from '../services/api';
+
+interface Service {
+  id: number;
+  title: string;
+  description: string;
+  image: string;
+  icon_name?: string;
+}
+
+interface CompanyStat {
+  id: number;
+  number: string;
+  label: string;
+  icon_name: string;
+  icon?: React.ComponentType<any>; // Add icon property for the mapped component
+}
+
+interface Testimonial {
+  id: number;
+  name: string;
+  company: string;
+  text: string;
+  image: string;
+}
 
 const HomePage: React.FC = () => {
-  const services = [
-    {
-      title: "Building Construction",
-      description: "Complete construction solutions for residential and commercial projects",
-      image: "https://images.pexels.com/photos/8293778/pexels-photo-8293778.jpeg"
-    },
-    {
-      title: "Renovation & Remodeling",
-      description: "Transform your existing spaces with our expert renovation services",
-      image: "https://images.pexels.com/photos/834892/pexels-photo-834892.jpeg"
-    },
-    {
-      title: "Civil Engineering",
-      description: "Professional engineering services for infrastructure projects",
-      image: "https://images.pexels.com/photos/3862618/pexels-photo-3862618.jpeg"
-    }
-  ];
+  const [services, setServices] = useState<Service[]>([]);
+  const [stats, setStats] = useState<CompanyStat[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
 
-  const stats = [
-    { number: "500+", label: "Projects Completed", icon: CheckCircle },
-    { number: "25+", label: "Years Experience", icon: Clock },
-    { number: "150+", label: "Happy Clients", icon: Users },
-    { number: "50+", label: "Awards Won", icon: Award },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      // Fetch services
+      const servicesResponse = await getHomeServices();
+      if (servicesResponse.success) {
+        setServices(servicesResponse.data || []);
+      } else {
+        console.error('Error fetching services:', servicesResponse.error);
+      }
 
-  const testimonials = [
-    {
-      name: "Sarah Johnson",
-      company: "Johnson Enterprises",
-      text: "BuildCorp delivered our office building ahead of schedule and within budget. Their attention to detail and professionalism is unmatched.",
-      image: "https://images.pexels.com/photos/3756679/pexels-photo-3756679.jpeg"
-    },
-    {
-      name: "Michael Chen",
-      company: "Chen Residential",
-      text: "The renovation of our home exceeded all expectations. The team was professional, clean, and the quality of work is exceptional.",
-      image: "https://images.pexels.com/photos/3760809/pexels-photo-3760809.jpeg"
-    },
-    {
-      name: "David Rodriguez",
-      company: "City Planning Department",
-      text: "BuildCorp has been our go-to contractor for municipal projects. Their expertise in civil engineering is outstanding.",
-      image: "https://images.pexels.com/photos/3759124/pexels-photo-3759124.jpeg"
-    }
-  ];
+      // Fetch stats
+      const statsResponse = await getHomeStats();
+      if (statsResponse.success) {
+        setStats(statsResponse.data?.map((stat: any) => ({
+          ...stat,
+          icon: stat.icon_name === "CheckCircle" ? CheckCircle : stat.icon_name === "Clock" ? Clock : stat.icon_name === "Users" ? Users : Award
+        })) || []);
+      } else {
+        console.error('Error fetching stats:', statsResponse.error);
+      }
+
+      // Fetch testimonials
+      const testimonialsResponse = await getHomeTestimonials();
+      if (testimonialsResponse.success) {
+        setTestimonials(testimonialsResponse.data || []);
+      } else {
+        console.error('Error fetching testimonials:', testimonialsResponse.error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center bg-fixed"
           style={{
             backgroundImage: "url('https://images.pexels.com/photos/162539/architecture-building-amsterdam-historic-162539.jpeg')"
@@ -94,7 +110,7 @@ const HomePage: React.FC = () => {
               const IconComponent = stat.icon;
               return (
                 <div key={index} className="text-center">
-                  <IconComponent className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+                  {IconComponent && <IconComponent className="w-12 h-12 text-orange-500 mx-auto mb-4" />}
                   <div className="text-4xl font-bold mb-2">{stat.number}</div>
                   <div className="text-gray-300">{stat.label}</div>
                 </div>
@@ -109,13 +125,11 @@ const HomePage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-4xl font-bold text-gray-900 mb-6">
-                Building Excellence Since 1999
-              </h2>
-              <p className="text-lg text-gray-700 mb-6 leading-relaxed">
-                BuildCorp has been at the forefront of the construction industry for over two decades. 
-                We specialize in delivering high-quality construction projects that combine innovative 
-                design with practical functionality.
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">Building Dreams into Reality</h2>
+              <p className="text-xl text-gray-700 leading-relaxed mb-8">
+                Peakstart General Construction has been at the forefront of the construction industry for over two decades.
+                We specialize in delivering high-quality residential, commercial, and industrial projects,
+                always with a focus on innovation, sustainability, and client satisfaction.
               </p>
               <div className="space-y-4 mb-8">
                 <div className="flex items-center space-x-3">
@@ -164,7 +178,7 @@ const HomePage: React.FC = () => {
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Services</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              From residential buildings to large-scale commercial projects, 
+              From residential buildings to large-scale commercial projects,
               we provide comprehensive construction services tailored to your needs.
             </p>
           </div>
@@ -244,7 +258,7 @@ const HomePage: React.FC = () => {
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold mb-6">Ready to Start Your Project?</h2>
           <p className="text-xl mb-8 text-gray-300">
-            Get in touch with us today for a free consultation and quote. 
+            Get in touch with us today for a free consultation and quote.
             Let's build something amazing together.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

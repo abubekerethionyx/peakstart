@@ -11,15 +11,15 @@ const Footer: React.FC = () => {
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">B</span>
+                <span className="text-white font-bold text-xl">P</span>
               </div>
               <div>
-                <h3 className="text-xl font-bold">BuildCorp</h3>
+                <h3 className="text-xl font-bold">Peakstart General Construction</h3>
                 <p className="text-sm text-gray-400">Construction Excellence</p>
               </div>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Building tomorrow's infrastructure today. With over 25 years of experience, 
+              Building tomorrow's infrastructure today. With over 25 years of experience,
               we deliver quality construction solutions that stand the test of time.
             </p>
             <div className="flex space-x-4">
@@ -74,7 +74,7 @@ const Footer: React.FC = () => {
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="w-5 h-5 text-orange-500" />
-                <p className="text-gray-400">info@buildcorp.com</p>
+                <p className="text-gray-400">info@peakstart.com</p>
               </div>
             </div>
           </div>
@@ -82,7 +82,7 @@ const Footer: React.FC = () => {
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
           <p className="text-gray-400 text-sm">
-            © 2025 BuildCorp. All rights reserved. | Privacy Policy | Terms of Service
+            © 2025 Peakstart General Construction. All rights reserved. | Privacy Policy | Terms of Service
           </p>
         </div>
       </div>
