@@ -1,187 +1,201 @@
-import React, { useState, useEffect } from 'react';
-import { getContactSubmissions, deleteContactSubmission } from '../services/api';
+"use client"
+
+import React, { useState, useEffect } from "react"
+import { getContactSubmissions, deleteContactSubmission } from "../services/api"
+import AdminModal from "../components/admin/AdminModal"
+import AdminTable from "../components/admin/AdminTable"
 
 interface ContactSubmission {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  projectType?: string;
-  message: string;
-  budget?: string;
-  submissionDate?: string; // backend might return created_at or submissionDate
-  created_at?: string;
+  id: number
+  firstName: string
+  lastName: string
+  email: string
+  phone?: string
+  projectType?: string
+  message: string
+  budget?: string
+  submissionDate?: string
+  created_at?: string
 }
 
 const ContactSubmissionsPage: React.FC = () => {
-  const [submissions, setSubmissions] = useState<ContactSubmission[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [isError, setIsError] = useState(false);
+  const [submissions, setSubmissions] = useState<ContactSubmission[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+  const [isError, setIsError] = useState(false)
 
-  // Modal state
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedSubmission, setSelectedSubmission] = useState<ContactSubmission | null>(null);
+  // Modal
+  const [modalOpen, setModalOpen] = useState(false)
+  const [selectedSubmission, setSelectedSubmission] = useState<ContactSubmission | null>(null)
 
   const fetchSubmissions = async () => {
-    setLoading(true);
-    setError(null);
-    const response = await getContactSubmissions();
+    setLoading(true)
+    setError(null)
+    const response = await getContactSubmissions()
     if (response.success && response.data) {
-      setSubmissions(response.data);
+      setSubmissions(response.data)
     } else {
-      setError(response.error || "Failed to fetch contact submissions.");
+      setError(response.error || "Failed to fetch contact submissions.")
     }
-    setLoading(false);
-  };
+    setLoading(false)
+  }
 
   useEffect(() => {
-    fetchSubmissions();
-  }, []);
-
-  const openModal = (submission: ContactSubmission) => {
-    setSelectedSubmission(submission);
-    setModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setModalOpen(false);
-    setSelectedSubmission(null);
-  };
+    fetchSubmissions()
+  }, [])
 
   const handleDelete = async (submissionId: number) => {
-    if (window.confirm('Are you sure you want to delete this contact submission?')) {
+    if (window.confirm("Are you sure you want to delete this submission?")) {
       try {
-        const response = await deleteContactSubmission(submissionId);
+        const response = await deleteContactSubmission(submissionId)
         if (response.success) {
-          setMessage(response.message || 'Contact submission deleted successfully!');
-          // If the deleted submission is currently open in the modal, close it
+          setMessage(response.message || "Submission deleted successfully!")
           if (selectedSubmission && selectedSubmission.id === submissionId) {
-            closeModal();
+            setModalOpen(false)
+            setSelectedSubmission(null)
           }
-          fetchSubmissions(); // Refresh the list
+          fetchSubmissions()
         } else {
-          setIsError(true);
-          setMessage(response.error || 'Failed to delete contact submission.');
+          setIsError(true)
+          setMessage(response.error || "Failed to delete submission.")
         }
       } catch (err: any) {
-        setIsError(true);
-        setMessage(err.message || 'An unexpected error occurred.');
+        setIsError(true)
+        setMessage(err.message || "An unexpected error occurred.")
       }
     }
-  };
+  }
 
   const formatDate = (submission: ContactSubmission) => {
-    const dateStr = submission.submissionDate || submission.created_at || '';
-    if (!dateStr) return '—';
+    const dateStr = submission.submissionDate || submission.created_at || ""
+    if (!dateStr) return "—"
     try {
-      return new Date(dateStr).toLocaleString();
+      return new Date(dateStr).toLocaleString()
     } catch {
-      return dateStr;
+      return dateStr
     }
-  };
+  }
 
   return (
-    <div className="bg-white p-8 rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Contact Submissions</h2>
+    <div className="w-full">
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">Contact Submissions</h2>
+
       {message && (
-        <div className={`p-3 rounded-md mb-4 ${isError ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+        <div
+          className={`p-4 rounded-lg mb-6 ${
+            isError
+              ? "bg-red-50 text-red-800 border border-red-200"
+              : "bg-green-50 text-green-800 border border-green-200"
+          } text-sm font-medium`}
+        >
           {message}
         </div>
       )}
-      {loading ? (
-        <p>Loading submissions...</p>
-      ) : error ? (
-        <p className="text-red-500">Error: {error}</p>
-      ) : submissions.length === 0 ? (
-        <p>No contact submissions found.</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project Type</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Budget</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {submissions.map((submission) => (
-                <tr key={submission.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{formatDate(submission)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{submission.firstName} {submission.lastName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{submission.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{submission.phone || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{submission.projectType || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs overflow-hidden text-ellipsis">{(submission.message || '').substring(0, 50)}...</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{submission.budget || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
-                    <button onClick={() => openModal(submission)} className="text-blue-600 hover:text-blue-900">View</button>
-                    <button onClick={() => handleDelete(submission.id)} className="text-red-600 hover:text-red-900">Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
 
-      {/* Detail Modal */}
-      {modalOpen && selectedSubmission && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6">
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-xl font-semibold">Submission Details</h3>
-              <button onClick={closeModal} className="text-gray-500 hover:text-gray-700">Close</button>
+      <div className="bg-white rounded-lg border border-gray-200">
+        {loading ? (
+          <div className="p-8 text-center text-gray-600 flex items-center justify-center space-x-2">
+            <svg
+              className="animate-spin h-5 w-5 text-gray-500"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 
+                5.291A7.962 7.962 0 014 12H0c0 3.042 
+                1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            <span>Loading submissions...</span>
+          </div>
+        ) : error ? (
+          <div className="p-8 text-center text-red-600 font-medium">Error: {error}</div>
+        ) : submissions.length === 0 ? (
+          <div className="p-12 text-center text-gray-600">No contact submissions yet.</div>
+        ) : (
+          <AdminTable
+            items={submissions}
+            columns={[
+              { key: "date", label: "Date", render: (s: ContactSubmission) => formatDate(s) },
+              { key: "name", label: "Name", render: (s: { firstName: any; lastName: any }) => `${s.firstName} ${s.lastName}` },
+              { key: "email", label: "Email" },
+              { key: "phone", label: "Phone", render: (s: ContactSubmission) => s.phone || "N/A" },
+              { key: "projectType", label: "Project Type", render: (s: ContactSubmission) => s.projectType || "N/A" },
+              {
+                key: "message",
+                label: "Message",
+                render: (s: { message: string }) => <span className="truncate max-w-xs block">{s.message.substring(0, 50)}...</span>,
+              },
+              { key: "budget", label: "Budget", render: (s: ContactSubmission) => s.budget || "N/A" },
+            ]}
+            onEdit={(item: React.SetStateAction<ContactSubmission | null>) => {
+              setSelectedSubmission(item)
+              setModalOpen(true)
+            }}
+            onDelete={(id: number) => handleDelete(id)}
+          />
+        )}
+      </div>
+
+      <AdminModal open={modalOpen} onClose={() => setModalOpen(false)} title="Submission Details">
+        {selectedSubmission && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <p className="text-sm text-gray-500">Date</p>
+              <p className="font-medium">{formatDate(selectedSubmission)}</p>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Date</p>
-                <p className="font-medium">{formatDate(selectedSubmission)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Name</p>
-                <p className="font-medium">{selectedSubmission.firstName} {selectedSubmission.lastName}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Email</p>
-                <p className="font-medium">{selectedSubmission.email}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Phone</p>
-                <p className="font-medium">{selectedSubmission.phone || 'N/A'}</p>
-              </div>
-              <div className="md:col-span-2">
-                <p className="text-sm text-gray-500">Project Type</p>
-                <p className="font-medium">{selectedSubmission.projectType || 'N/A'}</p>
-              </div>
-              <div className="md:col-span-2">
-                <p className="text-sm text-gray-500">Message</p>
-                <p className="font-medium whitespace-pre-wrap">{selectedSubmission.message || '—'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Budget</p>
-                <p className="font-medium">{selectedSubmission.budget || 'N/A'}</p>
-              </div>
+            <div>
+              <p className="text-sm text-gray-500">Name</p>
+              <p className="font-medium">
+                {selectedSubmission.firstName} {selectedSubmission.lastName}
+              </p>
             </div>
-
-            <div className="mt-6 text-right">
-              <button onClick={closeModal} className="px-4 py-2 bg-gray-200 rounded-md mr-2">Close</button>
-              <button onClick={() => { handleDelete(selectedSubmission.id); }} className="px-4 py-2 bg-red-600 text-white rounded-md">Delete</button>
+            <div>
+              <p className="text-sm text-gray-500">Email</p>
+              <p className="font-medium">{selectedSubmission.email}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Phone</p>
+              <p className="font-medium">{selectedSubmission.phone || "N/A"}</p>
+            </div>
+            <div className="md:col-span-2">
+              <p className="text-sm text-gray-500">Project Type</p>
+              <p className="font-medium">{selectedSubmission.projectType || "N/A"}</p>
+            </div>
+            <div className="md:col-span-2">
+              <p className="text-sm text-gray-500">Message</p>
+              <p className="font-medium whitespace-pre-wrap">{selectedSubmission.message}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">Budget</p>
+              <p className="font-medium">{selectedSubmission.budget || "N/A"}</p>
             </div>
           </div>
+        )}
+        <div className="mt-6 flex justify-end space-x-3">
+          <button
+            onClick={() => setModalOpen(false)}
+            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+          >
+            Close
+          </button>
+          {selectedSubmission && (
+            <button
+              onClick={() => handleDelete(selectedSubmission.id)}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+            >
+              Delete
+            </button>
+          )}
         </div>
-      )}
+      </AdminModal>
     </div>
-  );
-};
+  )
+}
 
-export default ContactSubmissionsPage;
+export default ContactSubmissionsPage
