@@ -21,6 +21,7 @@ const TestimonialForm: React.FC = () => {
     text: "",
     image: "",
   })
+  const [imageFile, setImageFile] = useState<File | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [isError, setIsError] = useState(false)
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
@@ -53,16 +54,24 @@ const TestimonialForm: React.FC = () => {
     }))
   }
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0]
+    setImageFile(file || null)
+  }
+
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setMessage(null)
     setIsError(false)
 
     try {
-      const response = await createTestimonial(formData)
+      const data: any = { ...formData }
+      if (imageFile) data.file = imageFile
+      const response = await createTestimonial(data)
       if (response.success) {
         setMessage(response.message || "Testimonial created successfully!")
         setFormData({ name: "", company: "", text: "", image: "" })
+        setImageFile(null)
         fetchTestimonials()
       } else {
         setIsError(true)
@@ -86,11 +95,14 @@ const TestimonialForm: React.FC = () => {
     }
 
     try {
-      const response = await updateTestimonial(editingTestimonialId, formData)
+      const data: any = { ...formData }
+      if (imageFile) data.file = imageFile
+      const response = await updateTestimonial(editingTestimonialId, data)
       if (response.success) {
         setMessage(response.message || "Testimonial updated successfully!")
         setFormData({ name: "", company: "", text: "", image: "" })
         setEditingTestimonialId(null)
+        setImageFile(null)
         fetchTestimonials()
       } else {
         setIsError(true)
@@ -146,6 +158,7 @@ const TestimonialForm: React.FC = () => {
     setFormData({ name: "", company: "", text: "", image: "" })
     setMessage(null)
     setIsError(false)
+    setImageFile(null)
   }
 
   return (
@@ -230,9 +243,10 @@ const TestimonialForm: React.FC = () => {
             ></textarea>
           </div>
           <div>
-            <label htmlFor="image" className="block text-sm font-semibold text-gray-700 mb-1">
-              Image URL
-            </label>
+            <label htmlFor="imageFile" className="block text-sm font-semibold text-gray-700 mb-1">Upload Image</label>
+            <input type="file" id="imageFile" name="imageFile" onChange={handleFileChange} accept="image/*" className="mt-1 block w-full" />
+            <p className="text-xs text-gray-500 mt-1">Or provide an image URL below (file upload takes precedence)</p>
+            <label htmlFor="image" className="block text-sm font-semibold text-gray-700 mb-1 mt-3">Image URL</label>
             <input
               type="text"
               id="image"
@@ -240,7 +254,6 @@ const TestimonialForm: React.FC = () => {
               value={formData.image}
               onChange={handleInputChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-              required
             />
           </div>
           <div className="flex justify-center space-x-4">

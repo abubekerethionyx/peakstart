@@ -27,6 +27,7 @@ const ProjectForm: React.FC = () => {
     description: "",
     client: "",
   })
+  const [imageFile, setImageFile] = useState<File | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [isError, setIsError] = useState(false)
   const [projects, setProjects] = useState<Project[]>([])
@@ -59,13 +60,20 @@ const ProjectForm: React.FC = () => {
     }))
   }
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0]
+    setImageFile(file || null)
+  }
+
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setMessage(null)
     setIsError(false)
 
     try {
-      const response = await createProject(formData)
+      const data: any = { ...formData }
+      if (imageFile) data.file = imageFile
+      const response = await createProject(data)
       if (response.success) {
         setMessage(response.message || "Project created successfully!")
         setFormData({
@@ -77,6 +85,7 @@ const ProjectForm: React.FC = () => {
           description: "",
           client: "",
         })
+        setImageFile(null)
         fetchProjects() // Refresh the list
       } else {
         setIsError(true)
@@ -100,7 +109,9 @@ const ProjectForm: React.FC = () => {
     }
 
     try {
-      const response = await updateProject(editingProjectId, formData)
+      const data: any = { ...formData }
+      if (imageFile) data.file = imageFile
+      const response = await updateProject(editingProjectId, data)
       if (response.success) {
         setMessage(response.message || "Project updated successfully!")
         setFormData({
@@ -113,6 +124,7 @@ const ProjectForm: React.FC = () => {
           client: "",
         })
         setEditingProjectId(null) // Exit edit mode
+        setImageFile(null)
         fetchProjects() // Refresh the list
       } else {
         setIsError(true)
@@ -168,17 +180,10 @@ const ProjectForm: React.FC = () => {
 
   const handleCancelEdit = () => {
     setEditingProjectId(null)
-    setFormData({
-      title: "",
-      category: "",
-      location: "",
-      completionDate: "",
-      image: "",
-      description: "",
-      client: "",
-    })
+    setFormData({ title: "", category: "", location: "", completionDate: "", image: "", description: "", client: "" })
     setMessage(null)
     setIsError(false)
+    setImageFile(null)
   }
 
   const categories = ["Commercial", "Residential", "Industrial", "Infrastructure"]
@@ -282,18 +287,11 @@ const ProjectForm: React.FC = () => {
             />
           </div>
           <div>
-            <label htmlFor="image" className="block text-sm font-semibold text-gray-700 mb-1">
-              Image URL
-            </label>
-            <input
-              type="text"
-              id="image"
-              name="image"
-              value={formData.image}
-              onChange={handleInputChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              required
-            />
+            <label htmlFor="imageFile" className="block text-sm font-semibold text-gray-700 mb-1">Upload Image</label>
+            <input type="file" id="imageFile" name="imageFile" onChange={handleFileChange} accept="image/*" className="mt-1 block w-full" />
+            <p className="text-xs text-gray-500 mt-1">Or provide an image URL below (file upload takes precedence)</p>
+            <label htmlFor="image" className="block text-sm font-semibold text-gray-700 mb-1 mt-3">Image URL</label>
+            <input type="text" id="image" name="image" value={formData.image} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" />
           </div>
           <div>
             <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-1">

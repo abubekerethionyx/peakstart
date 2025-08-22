@@ -23,6 +23,7 @@ const TeamMemberForm: React.FC = () => {
     image: "",
     bio: "",
   })
+  const [imageFile, setImageFile] = useState<File | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [isError, setIsError] = useState(false)
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
@@ -55,16 +56,24 @@ const TeamMemberForm: React.FC = () => {
     }))
   }
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0]
+    setImageFile(file || null)
+  }
+
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setMessage(null)
     setIsError(false)
 
     try {
-      const response = await createTeamMember(formData)
+      const data: any = { ...formData }
+      if (imageFile) data.file = imageFile
+      const response = await createTeamMember(data)
       if (response.success) {
         setMessage(response.message || "Team member created successfully!")
         setFormData({ name: "", position: "", experience: "", image: "", bio: "" })
+        setImageFile(null)
         fetchTeamMembers()
       } else {
         setIsError(true)
@@ -88,11 +97,14 @@ const TeamMemberForm: React.FC = () => {
     }
 
     try {
-      const response = await updateTeamMember(editingTeamMemberId, formData)
+      const data: any = { ...formData }
+      if (imageFile) data.file = imageFile
+      const response = await updateTeamMember(editingTeamMemberId, data)
       if (response.success) {
         setMessage(response.message || "Team member updated successfully!")
         setFormData({ name: "", position: "", experience: "", image: "", bio: "" })
         setEditingTeamMemberId(null)
+        setImageFile(null)
         fetchTeamMembers()
       } else {
         setIsError(true)
@@ -149,6 +161,7 @@ const TeamMemberForm: React.FC = () => {
     setFormData({ name: "", position: "", experience: "", image: "", bio: "" })
     setMessage(null)
     setIsError(false)
+    setImageFile(null)
   }
 
   return (
@@ -210,10 +223,11 @@ const TeamMemberForm: React.FC = () => {
             <input type="text" id="experience" name="experience" value={formData.experience} onChange={handleInputChange} placeholder="e.g., 10+ years" className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required />
           </div>
           <div>
-            <label htmlFor="image" className="block text-sm font-semibold text-gray-700 mb-1">
-              Image URL
-            </label>
-            <input type="text" id="image" name="image" value={formData.image} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required />
+            <label htmlFor="imageFile" className="block text-sm font-semibold text-gray-700 mb-1">Upload Image</label>
+            <input type="file" id="imageFile" name="imageFile" onChange={handleFileChange} accept="image/*" className="w-full" />
+            <p className="text-xs text-gray-500 mt-1">Or provide an image URL below (file upload takes precedence)</p>
+            <label htmlFor="image" className="block text-sm font-semibold text-gray-700 mb-1 mt-3">Image URL</label>
+            <input type="text" id="image" name="image" value={formData.image} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
           </div>
           <div>
             <label htmlFor="bio" className="block text-sm font-semibold text-gray-700 mb-1">

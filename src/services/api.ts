@@ -84,6 +84,41 @@ interface ApiResponse<T> {
 
 const API_BASE_URL = 'http://localhost:5000';
 
+// Helper to send JSON or FormData when a File is present
+async function sendRequest(url: string, method: string, data?: any) {
+  const options: RequestInit = { method };
+
+  if (data instanceof FormData) {
+    options.body = data;
+  } else if (data && typeof data === 'object') {
+    // detect any File/Blob in values
+    const hasFile = Object.values(data).some((v: any) => v instanceof File || v instanceof Blob);
+    if (hasFile) {
+      const fd = new FormData();
+      for (const [key, value] of Object.entries(data)) {
+        if (value === undefined || value === null) continue;
+        if (value instanceof File || value instanceof Blob) {
+          fd.append(key, value as any);
+        } else if (Array.isArray(value)) {
+          // append arrays as JSON string; backend accepts JSON arrays in non-form requests
+          fd.append(key, JSON.stringify(value));
+        } else if (typeof value === 'object') {
+          fd.append(key, JSON.stringify(value));
+        } else {
+          fd.append(key, String(value));
+        }
+      }
+      options.body = fd;
+    } else {
+      options.headers = { 'Content-Type': 'application/json' };
+      options.body = JSON.stringify(data);
+    }
+  }
+
+  const response = await fetch(url, options);
+  return response.json();
+}
+
 // Home Page APIs
 export const getHomeStats = async (): Promise<ApiResponse<any[]>> => {
   try {
@@ -138,14 +173,7 @@ export const getServiceById = async (id: number): Promise<ApiResponse<any>> => {
 
 export const createService = async (serviceData: any): Promise<ApiResponse<any>> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/services`, {
-    method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    body: JSON.stringify(serviceData),
-  });
-    return response.json();
+    return await sendRequest(`${API_BASE_URL}/api/services`, 'POST', serviceData);
   } catch (error: any) {
     console.error("Error creating service:", error);
     return { success: false, error: error.message || "An unexpected error occurred" };
@@ -154,14 +182,7 @@ export const createService = async (serviceData: any): Promise<ApiResponse<any>>
 
 export const updateService = async (id: number, serviceData: any): Promise<ApiResponse<any>> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/services/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    body: JSON.stringify(serviceData),
-  });
-    return response.json();
+    return await sendRequest(`${API_BASE_URL}/api/services/${id}`, 'PUT', serviceData);
   } catch (error: any) {
     console.error(`Error updating service with ID ${id}:`, error);
     return { success: false, error: error.message || "An unexpected error occurred" };
@@ -204,14 +225,7 @@ export const getProjectById = async (id: number): Promise<ApiResponse<any>> => {
 
 export const createProject = async (projectData: any): Promise<ApiResponse<any>> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/projects`, {
-    method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    body: JSON.stringify(projectData),
-  });
-    return response.json();
+    return await sendRequest(`${API_BASE_URL}/api/projects`, 'POST', projectData);
   } catch (error: any) {
     console.error("Error creating project:", error);
     return { success: false, error: error.message || "An unexpected error occurred" };
@@ -220,14 +234,7 @@ export const createProject = async (projectData: any): Promise<ApiResponse<any>>
 
 export const updateProject = async (id: number, projectData: any): Promise<ApiResponse<any>> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/projects/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(projectData),
-    });
-    return response.json();
+    return await sendRequest(`${API_BASE_URL}/api/projects/${id}`, 'PUT', projectData);
   } catch (error: any) {
     console.error(`Error updating project with ID ${id}:`, error);
     return { success: false, error: error.message || "An unexpected error occurred" };
@@ -250,10 +257,10 @@ export const deleteProject = async (id: number): Promise<ApiResponse<any>> => {
 export const getBlogPosts = async (category?: string, searchTerm?: string): Promise<ApiResponse<any[]>> => {
   try {
     let url = `${API_BASE_URL}/api/blog/posts`;
-  const params = new URLSearchParams();
-  if (category && category !== 'All') {
-    params.append('category', category);
-  }
+    const params = new URLSearchParams();
+    if (category && category !== 'All') {
+      params.append('category', category);
+    }
     if (searchTerm) {
       params.append('search', searchTerm);
     }
@@ -278,26 +285,9 @@ export const getBlogPostById = async (id: number): Promise<ApiResponse<any>> => 
   }
 };
 
-export const getBlogCategories = async (): Promise<ApiResponse<string[]>> => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/blog/categories`);
-    return response.json();
-  } catch (error: any) {
-    console.error("Error fetching blog categories:", error);
-    return { success: false, error: error.message || "An unexpected error occurred" };
-  }
-};
-
 export const createBlogPost = async (blogPostData: any): Promise<ApiResponse<any>> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/blog/posts`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(blogPostData),
-    });
-    return response.json();
+    return await sendRequest(`${API_BASE_URL}/api/blog/posts`, 'POST', blogPostData);
   } catch (error: any) {
     console.error("Error creating blog post:", error);
     return { success: false, error: error.message || "An unexpected error occurred" };
@@ -306,14 +296,7 @@ export const createBlogPost = async (blogPostData: any): Promise<ApiResponse<any
 
 export const updateBlogPost = async (id: number, blogPostData: any): Promise<ApiResponse<any>> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/blog/posts/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(blogPostData),
-    });
-    return response.json();
+    return await sendRequest(`${API_BASE_URL}/api/blog/posts/${id}`, 'PUT', blogPostData);
   } catch (error: any) {
     console.error(`Error updating blog post with ID ${id}:`, error);
     return { success: false, error: error.message || "An unexpected error occurred" };
@@ -345,14 +328,7 @@ export const getTeamMembers = async (): Promise<ApiResponse<any[]>> => {
 
 export const createTeamMember = async (teamMemberData: any): Promise<ApiResponse<any>> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/about/team`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(teamMemberData),
-    });
-    return response.json();
+    return await sendRequest(`${API_BASE_URL}/api/about/team`, 'POST', teamMemberData);
   } catch (error: any) {
     console.error("Error creating team member:", error);
     return { success: false, error: error.message || "An unexpected error occurred" };
@@ -361,14 +337,7 @@ export const createTeamMember = async (teamMemberData: any): Promise<ApiResponse
 
 export const updateTeamMember = async (id: number, teamMemberData: any): Promise<ApiResponse<any>> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/about/team/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(teamMemberData),
-    });
-    return response.json();
+    return await sendRequest(`${API_BASE_URL}/api/about/team/${id}`, 'PUT', teamMemberData);
   } catch (error: any) {
     console.error(`Error updating team member with ID ${id}:`, error);
     return { success: false, error: error.message || "An unexpected error occurred" };
@@ -510,6 +479,15 @@ export const createCompanyStat = async (companyStatData: any): Promise<ApiRespon
     return { success: false, error: error.message || "An unexpected error occurred" };
   }
 };
+export const getBlogCategories = async (): Promise<ApiResponse<string[]>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/blog/categories`);
+    return response.json();
+  } catch (error: any) {
+    console.error("Error fetching blog categories:", error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
 
 export const updateCompanyStat = async (id: number, companyStatData: any): Promise<ApiResponse<any>> => {
   try {
@@ -541,14 +519,7 @@ export const deleteCompanyStat = async (id: number): Promise<ApiResponse<any>> =
 
 export const createTestimonial = async (testimonialData: any): Promise<ApiResponse<any>> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/testimonials`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(testimonialData),
-    });
-    return response.json();
+    return await sendRequest(`${API_BASE_URL}/api/testimonials`, 'POST', testimonialData);
   } catch (error: any) {
     console.error("Error creating testimonial:", error);
     return { success: false, error: error.message || "An unexpected error occurred" };
@@ -557,14 +528,7 @@ export const createTestimonial = async (testimonialData: any): Promise<ApiRespon
 
 export const updateTestimonial = async (id: number, testimonialData: any): Promise<ApiResponse<any>> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/testimonials/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(testimonialData),
-    });
-    return response.json();
+    return await sendRequest(`${API_BASE_URL}/api/testimonials/${id}`, 'PUT', testimonialData);
   } catch (error: any) {
     console.error(`Error updating testimonial with ID ${id}:`, error);
     return { success: false, error: error.message || "An unexpected error occurred" };
@@ -587,7 +551,7 @@ export const deleteTestimonial = async (id: number): Promise<ApiResponse<any>> =
 export const submitContactForm = async (formData: any): Promise<ApiResponse<any>> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/contact/submit`, {
-    method: 'POST',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },

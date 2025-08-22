@@ -29,6 +29,7 @@ const BlogPostForm: React.FC = () => {
     image: "",
     readTime: "",
   })
+  const [imageFile, setImageFile] = useState<File | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [isError, setIsError] = useState(false)
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
@@ -61,13 +62,20 @@ const BlogPostForm: React.FC = () => {
     }))
   }
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0]
+    setImageFile(file || null)
+  }
+
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setMessage(null)
     setIsError(false)
 
     try {
-      const response = await createBlogPost(formData)
+      const data: any = { ...formData }
+      if (imageFile) data.file = imageFile
+      const response = await createBlogPost(data)
       if (response.success) {
         setMessage(response.message || "Blog post created successfully!")
         setFormData({
@@ -80,6 +88,7 @@ const BlogPostForm: React.FC = () => {
           image: "",
           readTime: "",
         })
+        setImageFile(null)
         fetchBlogPosts() // Refresh the list
       } else {
         setIsError(true)
@@ -103,7 +112,9 @@ const BlogPostForm: React.FC = () => {
     }
 
     try {
-      const response = await updateBlogPost(editingBlogPostId, formData)
+      const data: any = { ...formData }
+      if (imageFile) data.file = imageFile
+      const response = await updateBlogPost(editingBlogPostId, data)
       if (response.success) {
         setMessage(response.message || "Blog post updated successfully!")
         setFormData({
@@ -117,6 +128,7 @@ const BlogPostForm: React.FC = () => {
           readTime: "",
         })
         setEditingBlogPostId(null) // Exit edit mode
+        setImageFile(null)
         fetchBlogPosts() // Refresh the list
       } else {
         setIsError(true)
@@ -194,6 +206,7 @@ const BlogPostForm: React.FC = () => {
     })
     setMessage(null)
     setIsError(false)
+    setImageFile(null)
   }
 
   const categories = ["Renovation", "Sustainability", "Design", "Safety", "Technology", "Management", "Other"]
@@ -333,7 +346,21 @@ const BlogPostForm: React.FC = () => {
               </div>
 
               <div className="md:col-span-2">
-                <label htmlFor="image" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="imageFile" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Upload Featured Image
+                </label>
+                <input
+                  type="file"
+                  id="imageFile"
+                  name="imageFile"
+                  onChange={handleFileChange}
+                  accept="image/*"
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Or provide an image URL below (file upload takes precedence)
+                </p>
+                <label htmlFor="image" className="block text-sm font-semibold text-gray-700 mb-2 mt-3">
                   Featured Image URL
                 </label>
                 <input
@@ -344,7 +371,6 @@ const BlogPostForm: React.FC = () => {
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
                   placeholder="https://example.com/image.jpg"
-                  required
                 />
               </div>
 

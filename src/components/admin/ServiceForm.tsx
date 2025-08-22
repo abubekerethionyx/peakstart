@@ -23,6 +23,7 @@ const ServiceForm: React.FC = () => {
     icon_name: "",
     features: "",
   })
+  const [imageFile, setImageFile] = useState<File | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [isError, setIsError] = useState(false)
   const [services, setServices] = useState<Service[]>([])
@@ -55,21 +56,28 @@ const ServiceForm: React.FC = () => {
     }))
   }
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0]
+    setImageFile(file || null)
+  }
+
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setMessage(null)
     setIsError(false)
 
-    const serviceData = {
+    const serviceData: any = {
       ...formData,
       features: formData.features.split(",").map((f) => f.trim()).filter((f) => f !== ""),
     }
+    if (imageFile) serviceData.file = imageFile
 
     try {
       const response = await createService(serviceData)
       if (response.success) {
         setMessage(response.message || "Service created successfully!")
         setFormData({ title: "", description: "", image: "", icon_name: "", features: "" })
+        setImageFile(null)
         fetchServices()
       } else {
         setIsError(true)
@@ -92,10 +100,11 @@ const ServiceForm: React.FC = () => {
       return
     }
 
-    const serviceData = {
+    const serviceData: any = {
       ...formData,
       features: formData.features.split(",").map((f) => f.trim()).filter((f) => f !== ""),
     }
+    if (imageFile) serviceData.file = imageFile
 
     try {
       const response = await updateService(editingServiceId, serviceData)
@@ -103,6 +112,7 @@ const ServiceForm: React.FC = () => {
         setMessage(response.message || "Service updated successfully!")
         setFormData({ title: "", description: "", image: "", icon_name: "", features: "" })
         setEditingServiceId(null)
+        setImageFile(null)
         fetchServices()
       } else {
         setIsError(true)
@@ -159,6 +169,7 @@ const ServiceForm: React.FC = () => {
     setFormData({ title: "", description: "", image: "", icon_name: "", features: "" })
     setMessage(null)
     setIsError(false)
+    setImageFile(null)
   }
 
   return (
@@ -207,8 +218,11 @@ const ServiceForm: React.FC = () => {
             <textarea id="description" name="description" value={formData.description} onChange={handleInputChange} rows={3} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required />
           </div>
           <div>
-            <label htmlFor="image" className="block text-sm font-semibold text-gray-700 mb-1">Image URL</label>
-            <input type="text" id="image" name="image" value={formData.image} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required />
+            <label htmlFor="imageFile" className="block text-sm font-semibold text-gray-700 mb-1">Upload Image</label>
+            <input type="file" id="imageFile" name="imageFile" onChange={handleFileChange} accept="image/*" className="mt-1 block w-full" />
+            <p className="text-xs text-gray-500 mt-1">Or provide an image URL below (file upload takes precedence)</p>
+            <label htmlFor="image" className="block text-sm font-semibold text-gray-700 mb-1 mt-3">Image URL</label>
+            <input type="text" id="image" name="image" value={formData.image} onChange={handleInputChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" />
           </div>
           <div>
             <label htmlFor="icon_name" className="block text-sm font-semibold text-gray-700 mb-1">Icon Name</label>
