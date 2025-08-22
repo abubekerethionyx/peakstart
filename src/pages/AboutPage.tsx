@@ -114,7 +114,7 @@ const AboutPage: React.FC = () => {
             <div>
               <h1 className="text-5xl md:text-6xl font-bold mb-6">About Peakstart General Construction</h1>
               <p className="text-xl md:text-2xl text-gray-300 leading-relaxed">
-                For over 25 years, we've been building more than structures –
+                For over 5 years, we've been building more than structures –
                 we've been building relationships, communities, and a legacy of excellence
                 in the construction industry.
               </p>

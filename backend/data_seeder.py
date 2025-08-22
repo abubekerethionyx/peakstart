@@ -363,7 +363,7 @@ def seed_data():
         # Seed Company Stats
         stats_data = [
             {"number": "500+", "label": "Projects Completed", "icon_name": "CheckCircle"},
-            {"number": "25+", "label": "Years Experience", "icon_name": "Clock"},
+            {"number": "5+", "label": "Years Experience", "icon_name": "Clock"},
             {"number": "150+", "label": "Happy Clients", "icon_name": "Users"},
             {"number": "50+", "label": "Awards Won", "icon_name": "Award"},
         ]

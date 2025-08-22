@@ -82,7 +82,7 @@ interface ApiResponse<T> {
   message?: string;
 }
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://peak.peakstartgc.com';
 
 // Helper to send JSON or FormData when a File is present
 async function sendRequest(url: string, method: string, data?: any) {
