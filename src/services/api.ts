@@ -82,7 +82,7 @@ interface ApiResponse<T> {
   message?: string;
 }
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://peak.peakstartgc.com';
 
 // Home Page APIs
 export const getHomeStats = async (): Promise<ApiResponse<any[]>> => {

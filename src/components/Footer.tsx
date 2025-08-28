@@ -19,7 +19,7 @@ const Footer: React.FC = () => {
               </div>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Building tomorrow's infrastructure today. With over 25 years of experience,
+              Building tomorrow's infrastructure today. With over 5 years of experience,
               we deliver quality construction solutions that stand the test of time.
             </p>
             <div className="flex space-x-4">
@@ -62,19 +62,18 @@ const Footer: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-start space-x-3">
                 <MapPin className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
-                <p className="text-gray-400 text-sm">
-                  123 Construction Ave<br />
-                  Building City, BC 12345<br />
-                  United States
+                <p className="text-gray-400 text-sm">             
+                  Addis Ketema<br />
+                  Addis Ababa, Ethiopia
                 </p>
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="w-5 h-5 text-orange-500" />
-                <p className="text-gray-400">+1 (555) 123-4567</p>
+                <p className="text-gray-400">+251 920676477</p>
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="w-5 h-5 text-orange-500" />
-                <p className="text-gray-400">info@peakstart.com</p>
+                <p className="text-gray-400">info@peakstartgc.com</p>
               </div>
             </div>
           </div>

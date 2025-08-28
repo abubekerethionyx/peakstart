@@ -243,22 +243,22 @@ const ContactPage: React.FC = () => {
                   <Phone className="w-6 h-6 text-orange-500 flex-shrink-0" />
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">Phone Number</h3>
-                    <p className="text-gray-700">+1 (555) 123-4567</p>
+                    <p className="text-gray-700">+251 920676477</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
                   <Mail className="w-6 h-6 text-orange-500 flex-shrink-0" />
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">Email Address</h3>
-                    <p className="text-gray-700">info@buildcorp.com</p>
+                    <p className="text-gray-700">info@peakstartgc.com</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
                   <MapPin className="w-6 h-6 text-orange-500 flex-shrink-0" />
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">Office Location</h3>
-                    <p className="text-gray-700">123 Construction Blvd, Suite 100</p>
-                    <p className="text-gray-700">Metropolis, CA 90210</p>
+                    <p className="text-gray-700">Addis Ketema</p>
+                    <p className="text-gray-700">Addis Ababa, Ethiopia</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">

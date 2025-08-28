@@ -47,13 +47,13 @@ with app.app_context():
 #     })
 
 # Remove generic health_check route to avoid conflict
-# @app.route('/health')
-# def health_check():
-#     return jsonify({
-#         "status": "healthy",
-#         "timestamp": datetime.utcnow().isoformat(),
-#         "database": "connected" if db.engine.pool.checkedin() > 0 else "disconnected"
-#     })
+@app.route('/health')
+def health_check():
+    return jsonify({
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "database": "connected" if db.engine.pool.checkedin() > 0 else "disconnected"
+    })
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

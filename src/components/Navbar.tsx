@@ -39,11 +39,11 @@ const Navbar: React.FC = () => {
             <div className="flex space-x-6">
               <div className="flex items-center space-x-2">
                 <Phone size={16} />
-                <span>+1 (555) 123-4567</span>
+                <span>+251 920676477</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail size={16} />
-                <span>info@peakstart.com</span>
+                <span>info@peakstartgc.com</span>
               </div>
             </div>
             <div className="hidden md:block">
