@@ -1,34 +1,9 @@
 from flask import request, jsonify
 from extensions import db
 from models import Service, ServiceFeature, Project, BlogPost, TeamMember, Testimonial, ContactSubmission, CompanyStat, Certification, Award
-import os
-import uuid
 
 
 def register_routes(app):
-    # helper to save uploaded files and return public path
-    ALLOWED_EXT = {'png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'}
-
-    def save_uploaded_file(file, entity='misc'):
-        if not file:
-            return None
-        filename = file.filename
-        if not filename or '.' not in filename:
-            return None
-        ext = filename.rsplit('.', 1)[-1].lower()
-        if ext not in ALLOWED_EXT:
-            return None
-        subdir = entity if entity in ['service', 'project', 'blog', 'testimonial', 'team'] else 'misc'
-        upload_folder = app.config.get('UPLOAD_FOLDER') or os.path.join(app.root_path, 'static', 'uploads')
-        target_dir = os.path.join(upload_folder, subdir)
-        if not os.path.exists(target_dir):
-            os.makedirs(target_dir)
-        unique_name = f"{uuid.uuid4().hex}.{ext}"
-        save_path = os.path.join(target_dir, unique_name)
-        file.save(save_path)
-        public_path = f"/uploads/{subdir}/{unique_name}"
-        return public_path
-
     # Home Page Routes
     @app.route('/api/home/stats', methods=['GET'])
     def get_home_stats():
@@ -93,78 +68,61 @@ def register_routes(app):
 
     @app.route('/api/services', methods=['POST'])
     def create_service():
-        """Create a new service (accepts JSON or multipart form with 'file')"""
+        """Create a new service"""
         try:
-            image_url = None
-            if request.files and 'file' in request.files:
-                image_url = save_uploaded_file(request.files['file'], entity='service')
+            data = request.get_json()
 
-            if request.is_json:
-                data = request.get_json()
-            else:
-                data = request.form.to_dict()
-
-            # prefer uploaded image when present
-            image_field = image_url or data.get('image')
-
+            # Create service
             service = Service(
-                title=data.get('title'),
-                description=data.get('description'),
-                image=image_field or '',
+                title=data['title'],
+                description=data['description'],
+                image=data['image'],
                 icon_name=data.get('icon_name')
             )
 
             db.session.add(service)
-            db.session.flush()
+            db.session.flush()  # Get the service ID
 
-            # Add features (expect JSON array in JSON requests, or comma-separated in form)
-            features = []
-            if 'features' in data and data.get('features'):
-                if isinstance(data.get('features'), str) and not request.is_json:
-                    features = [f.strip() for f in data.get('features').split(',') if f.strip()]
-                else:
-                    features = data.get('features')
-
-            for feature_text in features:
-                feature = ServiceFeature(service_id=service.id, feature=feature_text)
-                db.session.add(feature)
+            # Add features
+            if 'features' in data:
+                for feature_text in data['features']:
+                    feature = ServiceFeature(
+                        service_id=service.id,
+                        feature=feature_text
+                    )
+                    db.session.add(feature)
 
             db.session.commit()
 
-            return jsonify({'success': True, 'data': service.to_dict(), 'message': 'Service created successfully'}), 201
+            return jsonify(
+                {
+                    'success': True,
+                    'data': service.to_dict(),
+                    'message': 'Service created successfully'
+                }
+            ), 201
         except Exception as e:
             db.session.rollback()
             return jsonify({'success': False, 'error': str(e)}), 500
 
     @app.route('/api/services/<int:service_id>', methods=['PUT'])
     def update_service(service_id):
-        """Update an existing service (accepts JSON or multipart form with 'file')"""
+        """Update an existing service"""
         try:
             service = Service.query.get_or_404(service_id)
-
-            image_url = None
-            if request.files and 'file' in request.files:
-                image_url = save_uploaded_file(request.files['file'], entity='service')
-
-            if request.is_json:
-                data = request.get_json()
-            else:
-                data = request.form.to_dict()
+            data = request.get_json()
 
             service.title = data.get('title', service.title)
             service.description = data.get('description', service.description)
-            service.image = image_url or data.get('image', service.image)
+            service.image = data.get('image', service.image)
             service.icon_name = data.get('icon_name', service.icon_name)
 
             # Update features
-            if 'features' in data and data.get('features') is not None:
+            if 'features' in data:
+                # Delete existing features
                 ServiceFeature.query.filter_by(service_id=service.id).delete()
-                features = []
-                if isinstance(data.get('features'), str) and not request.is_json:
-                    features = [f.strip() for f in data.get('features').split(',') if f.strip()]
-                else:
-                    features = data.get('features')
-                for feature_text in features:
+                # Add new features
+                for feature_text in data['features']:
                     feature = ServiceFeature(service_id=service.id, feature=feature_text)
                     db.session.add(feature)
 
@@ -218,55 +176,44 @@ def register_routes(app):
 
     @app.route('/api/projects', methods=['POST'])
     def create_project():
-        """Create a new project (accepts file upload)"""
+        """Create a new project"""
         try:
-            image_url = None
-            if request.files and 'file' in request.files:
-                image_url = save_uploaded_file(request.files['file'], entity='project')
-
-            if request.is_json:
-                data = request.get_json()
-            else:
-                data = request.form.to_dict()
+            data = request.get_json()
 
             project = Project(
-                title=data.get('title'),
-                category=data.get('category'),
-                location=data.get('location'),
+                title=data['title'],
+                category=data['category'],
+                location=data['location'],
                 completion_date=data.get('completionDate') or data.get('completion_date'),
-                image=image_url or data.get('image') or '',
-                description=data.get('description'),
-                client=data.get('client')
+                image=data['image'],
+                description=data['description'],
+                client=data['client']
             )
 
             db.session.add(project)
             db.session.commit()
 
-            return jsonify({'success': True, 'data': project.to_dict(), 'message': 'Project created successfully'}), 201
+            return jsonify({
+                'success': True,
+                'data': project.to_dict(),
+                'message': 'Project created successfully'
+            }), 201
         except Exception as e:
             db.session.rollback()
             return jsonify({'success': False, 'error': str(e)}), 500
 
     @app.route('/api/projects/<int:project_id>', methods=['PUT'])
     def update_project(project_id):
-        """Update an existing project (accepts file upload)"""
+        """Update an existing project"""
         try:
             project = Project.query.get_or_404(project_id)
-
-            image_url = None
-            if request.files and 'file' in request.files:
-                image_url = save_uploaded_file(request.files['file'], entity='project')
-
-            if request.is_json:
-                data = request.get_json()
-            else:
-                data = request.form.to_dict()
+            data = request.get_json()
 
             project.title = data.get('title', project.title)
             project.category = data.get('category', project.category)
             project.location = data.get('location', project.location)
             project.completion_date = data.get('completionDate', project.completion_date)
-            project.image = image_url or data.get('image', project.image)
+            project.image = data.get('image', project.image)
             project.description = data.get('description', project.description)
             project.client = data.get('client', project.client)
 
@@ -346,50 +293,41 @@ def register_routes(app):
 
     @app.route('/api/blog/posts', methods=['POST'])
     def create_blog_post():
-        """Create a new blog post (accepts file upload)"""
+        """Create a new blog post"""
         try:
-            image_url = None
-            if request.files and 'file' in request.files:
-                image_url = save_uploaded_file(request.files['file'], entity='blog')
-
-            if request.is_json:
-                data = request.get_json()
-            else:
-                data = request.form.to_dict()
+            data = request.get_json()
 
             blog_post = BlogPost(
-                title=data.get('title'),
-                excerpt=data.get('excerpt'),
-                content=data.get('content'),
-                author=data.get('author'),
-                publish_date=data.get('publishDate'),
-                category=data.get('category'),
-                image=image_url or data.get('image') or '',
-                read_time=data.get('readTime')
+                title=data['title'],
+                excerpt=data['excerpt'],
+                content=data['content'],
+                author=data['author'],
+                publish_date=data['publishDate'],
+                category=data['category'],
+                image=data['image'],
+                read_time=data['readTime']
             )
 
             db.session.add(blog_post)
             db.session.commit()
 
-            return jsonify({'success': True, 'data': blog_post.to_dict(), 'message': 'Blog post created successfully'}), 201
+            return jsonify(
+                {
+                    'success': True,
+                    'data': blog_post.to_dict(),
+                    'message': 'Blog post created successfully'
+                }
+            ), 201
         except Exception as e:
             db.session.rollback()
             return jsonify({'success': False, 'error': str(e)}), 500
 
     @app.route('/api/blog/posts/<int:post_id>', methods=['PUT'])
     def update_blog_post(post_id):
-        """Update an existing blog post (accepts file upload)"""
+        """Update an existing blog post"""
         try:
             blog_post = BlogPost.query.get_or_404(post_id)
-
-            image_url = None
-            if request.files and 'file' in request.files:
-                image_url = save_uploaded_file(request.files['file'], entity='blog')
-
-            if request.is_json:
-                data = request.get_json()
-            else:
-                data = request.form.to_dict()
+            data = request.get_json()
 
             blog_post.title = data.get('title', blog_post.title)
             blog_post.excerpt = data.get('excerpt', blog_post.excerpt)
@@ -397,7 +335,7 @@ def register_routes(app):
             blog_post.author = data.get('author', blog_post.author)
             blog_post.publish_date = data.get('publishDate', blog_post.publish_date)
             blog_post.category = data.get('category', blog_post.category)
-            blog_post.image = image_url or data.get('image', blog_post.image)
+            blog_post.image = data.get('image', blog_post.image)
             blog_post.read_time = data.get('readTime', blog_post.read_time)
 
             db.session.commit()
@@ -434,52 +372,43 @@ def register_routes(app):
 
     @app.route('/api/about/team', methods=['POST'])
     def create_team_member():
-        """Create a new team member (accepts file upload for image)"""
+        """Create a new team member"""
         try:
-            image_url = None
-            if request.files and 'file' in request.files:
-                image_url = save_uploaded_file(request.files['file'], entity='team')
-
-            if request.is_json:
-                data = request.get_json()
-            else:
-                data = request.form.to_dict()
+            data = request.get_json()
 
             team_member = TeamMember(
-                name=data.get('name'),
-                position=data.get('position'),
-                experience=data.get('experience'),
-                image=image_url or data.get('image') or '',
-                bio=data.get('bio')
+                name=data['name'],
+                position=data['position'],
+                experience=data['experience'],
+                image=data['image'],
+                bio=data['bio']
             )
 
             db.session.add(team_member)
             db.session.commit()
 
-            return jsonify({'success': True, 'data': team_member.to_dict(), 'message': 'Team member created successfully'}), 201
+            return jsonify(
+                {
+                    'success': True,
+                    'data': team_member.to_dict(),
+                    'message': 'Team member created successfully'
+                }
+            ), 201
         except Exception as e:
             db.session.rollback()
             return jsonify({'success': False, 'error': str(e)}), 500
 
     @app.route('/api/about/team/<int:member_id>', methods=['PUT'])
     def update_team_member(member_id):
-        """Update an existing team member (accepts file upload)"""
+        """Update an existing team member"""
         try:
             team_member = TeamMember.query.get_or_404(member_id)
-
-            image_url = None
-            if request.files and 'file' in request.files:
-                image_url = save_uploaded_file(request.files['file'], entity='team')
-
-            if request.is_json:
-                data = request.get_json()
-            else:
-                data = request.form.to_dict()
+            data = request.get_json()
 
             team_member.name = data.get('name', team_member.name)
             team_member.position = data.get('position', team_member.position)
             team_member.experience = data.get('experience', team_member.experience)
-            team_member.image = image_url or data.get('image', team_member.image)
+            team_member.image = data.get('image', team_member.image)
             team_member.bio = data.get('bio', team_member.bio)
 
             db.session.commit()
@@ -692,51 +621,42 @@ def register_routes(app):
 
     @app.route('/api/testimonials', methods=['POST'])
     def create_testimonial():
-        """Create a new testimonial (accepts file upload for image)"""
+        """Create a new testimonial"""
         try:
-            image_url = None
-            if request.files and 'file' in request.files:
-                image_url = save_uploaded_file(request.files['file'], entity='testimonial')
-
-            if request.is_json:
-                data = request.get_json()
-            else:
-                data = request.form.to_dict()
+            data = request.get_json()
 
             testimonial = Testimonial(
-                name=data.get('name'),
-                company=data.get('company'),
-                text=data.get('text'),
-                image=image_url or data.get('image') or ''
+                name=data['name'],
+                company=data['company'],
+                text=data['text'],
+                image=data['image']
             )
 
             db.session.add(testimonial)
             db.session.commit()
 
-            return jsonify({'success': True, 'data': testimonial.to_dict(), 'message': 'Testimonial created successfully'}), 201
+            return jsonify(
+                {
+                    'success': True,
+                    'data': testimonial.to_dict(),
+                    'message': 'Testimonial created successfully'
+                }
+            ), 201
         except Exception as e:
             db.session.rollback()
             return jsonify({'success': False, 'error': str(e)}), 500
 
     @app.route('/api/testimonials/<int:testimonial_id>', methods=['PUT'])
     def update_testimonial(testimonial_id):
-        """Update an existing testimonial (accepts file upload)"""
+        """Update an existing testimonial"""
         try:
             testimonial = Testimonial.query.get_or_404(testimonial_id)
-
-            image_url = None
-            if request.files and 'file' in request.files:
-                image_url = save_uploaded_file(request.files['file'], entity='testimonial')
-
-            if request.is_json:
-                data = request.get_json()
-            else:
-                data = request.form.to_dict()
+            data = request.get_json()
 
             testimonial.name = data.get('name', testimonial.name)
             testimonial.company = data.get('company', testimonial.company)
             testimonial.text = data.get('text', testimonial.text)
-            testimonial.image = image_url or data.get('image', testimonial.image)
+            testimonial.image = data.get('image', testimonial.image)
 
             db.session.commit()
 
