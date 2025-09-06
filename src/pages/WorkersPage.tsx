@@ -38,7 +38,7 @@ const WorkersPage: React.FC = () => {
   const navigate = useNavigate();
   const [workers, setWorkers] = useState<WorkerWithAttendance[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('today');
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month' | 'custom'>('all');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -46,6 +46,8 @@ const WorkersPage: React.FC = () => {
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null);
   const [showAddAttendance, setShowAddAttendance] = useState(false);
   const [selectedWorkerForAttendance, setSelectedWorkerForAttendance] = useState<Worker | null>(null);
+  const [showAllAttendances, setShowAllAttendances] = useState(false);
+  const [selectedWorkerForAllAttendances, setSelectedWorkerForAllAttendances] = useState<WorkerWithAttendance | null>(null);
   const [workerForm, setWorkerForm] = useState({
     name: '',
     position: '',
@@ -101,6 +103,11 @@ const WorkersPage: React.FC = () => {
 
           const attendanceResponse = await api.get(attendanceUrl);
           const attendances = attendanceResponse.data.success ? attendanceResponse.data.data : [];
+
+          // Debug logging
+          console.log(`Worker ${worker.name} - Attendance URL: ${attendanceUrl}`);
+          console.log(`Worker ${worker.name} - Total attendance records: ${attendances.length}`);
+          console.log(`Worker ${worker.name} - Attendance data:`, attendances);
 
           // Calculate totals
           const totalDays = attendances.filter((a: Attendance) => a.is_present).length;
@@ -238,6 +245,11 @@ const WorkersPage: React.FC = () => {
       notes: ''
     });
     setShowAddAttendance(true);
+  };
+
+  const handleShowAllAttendances = (worker: WorkerWithAttendance) => {
+    setSelectedWorkerForAllAttendances(worker);
+    setShowAllAttendances(true);
   };
 
   const getDateRangeText = () => {
@@ -508,7 +520,17 @@ const WorkersPage: React.FC = () => {
 
               {/* Recent Attendance */}
               <div className="mb-4">
-                <h5 className="text-sm font-medium text-gray-700 mb-2">Recent Attendance</h5>
+                <div className="flex justify-between items-center mb-2">
+                  <h5 className="text-sm font-medium text-gray-700">Recent Attendance</h5>
+                  {worker.attendances.length > 3 && (
+                    <button
+                      onClick={() => handleShowAllAttendances(worker)}
+                      className="text-xs text-blue-600 hover:text-blue-800 underline"
+                    >
+                      See All ({worker.attendances.length})
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-2">
                   {worker.attendances.slice(0, 3).map((attendance) => (
                     <div key={attendance.id} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded">
@@ -797,6 +819,100 @@ const WorkersPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Show All Attendances Modal */}
+      {showAllAttendances && selectedWorkerForAllAttendances && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">
+                All Attendances - {selectedWorkerForAllAttendances.name}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowAllAttendances(false);
+                  setSelectedWorkerForAllAttendances(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="mb-4 p-3 bg-blue-50 rounded-md">
+              <p className="text-sm text-blue-800">
+                <strong>Date Range:</strong> {getDateRangeText()}
+              </p>
+              <p className="text-sm text-blue-800">
+                <strong>Total Records:</strong> {selectedWorkerForAllAttendances.attendances.length} | 
+                <strong> Days Worked:</strong> {selectedWorkerForAllAttendances.totalDays} | 
+                <strong> Total Hours:</strong> {selectedWorkerForAllAttendances.totalHours.toFixed(1)}h
+              </p>
+            </div>
+
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {selectedWorkerForAllAttendances.attendances.map((attendance) => (
+                <div key={attendance.id} className="flex justify-between items-center text-sm p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <span className="font-medium">{new Date(attendance.date).toLocaleDateString()}</span>
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      attendance.is_present ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {attendance.is_present ? 'Present' : 'Absent'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {attendance.check_in_time && (
+                      <span className="text-gray-600">
+                        In: {attendance.check_in_time}
+                      </span>
+                    )}
+                    {attendance.check_out_time && (
+                      <span className="text-gray-600">
+                        Out: {attendance.check_out_time}
+                      </span>
+                    )}
+                    {attendance.hours_worked > 0 && (
+                      <span className="font-medium text-blue-600">
+                        {attendance.hours_worked}h
+                      </span>
+                    )}
+                  </div>
+                  {attendance.notes && (
+                    <div className="w-full mt-2 text-xs text-gray-500">
+                      <strong>Notes:</strong> {attendance.notes}
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              {selectedWorkerForAllAttendances.attendances.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No attendance records</h3>
+                  <p className="mt-1 text-sm text-gray-500">No attendance records found for the selected date range.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => {
+                  setShowAllAttendances(false);
+                  setSelectedWorkerForAllAttendances(null);
+                }}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
