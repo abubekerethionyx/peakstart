@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -22,6 +21,11 @@ import CompanyStatForm from './components/admin/CompanyStatForm';
 import CertificationForm from './components/admin/CertificationForm';
 import AwardForm from './components/admin/AwardForm';
 import AdminDashboardPage from './pages/AdminDashboardPage'; // Import AdminDashboardPage
+import SiteManagementPage from './pages/SiteManagementPage';
+import SiteDetailPage from './pages/SiteDetailPage';
+import WorkersPage from './pages/WorkersPage';
+import DailyActivitiesPage from './pages/DailyActivitiesPage';
+import CostsPage from './pages/CostsPage';
 
 function App() {
   return (
@@ -41,6 +45,12 @@ function App() {
           <Route path="/admin" element={<AdminPage />}>
             {/* Nested Admin Routes */}
             <Route index element={<AdminDashboardPage />} /> {/* Default route for /admin */}
+            <Route path="website" element={<AdminDashboardPage />} /> {/* Website administration redirect */}
+            <Route path="sites" element={<SiteManagementPage />} />
+            <Route path="sites/:id" element={<SiteDetailPage />} />
+            <Route path="sites/:id/workers" element={<WorkersPage />} />
+            <Route path="sites/:id/activities" element={<DailyActivitiesPage />} />
+            <Route path="sites/:id/costs" element={<CostsPage />} />
             <Route path="services" element={<div><ServiceForm/></div>} />
             <Route path="projects" element={<div><ProjectForm/></div>} />
             <Route path="blogposts" element={<div><BlogPostForm></BlogPostForm></div>} />

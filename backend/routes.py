@@ -1,6 +1,8 @@
 from flask import request, jsonify
 from extensions import db
-from models import Service, ServiceFeature, Project, BlogPost, TeamMember, Testimonial, ContactSubmission, CompanyStat, Certification, Award
+from models import Service, ServiceFeature, Project, BlogPost, TeamMember, Testimonial, ContactSubmission, CompanyStat, Certification, Award, Site, Worker, Attendance, DailyActivity, Cost
+from datetime import datetime, date, time
+import json
 
 
 def register_routes(app):
@@ -741,6 +743,604 @@ def register_routes(app):
                 'message': 'Fake data uploaded successfully'
             }), 200
         except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    # Site Routes
+    @app.route('/api/sites', methods=['GET'])
+    def get_sites():
+        """Get all sites with optional status filter"""
+        try:
+            status = request.args.get('status')
+            start_date = request.args.get('start_date')
+            end_date = request.args.get('end_date')
+            
+            query = Site.query
+            
+            if status and status != 'All':
+                query = query.filter_by(status=status)
+            
+            if start_date:
+                start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+                query = query.filter(Site.start_date >= start_date_obj)
+            
+            if end_date:
+                end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+                query = query.filter(Site.end_date <= end_date_obj)
+            
+            sites = query.order_by(Site.created_at.desc()).all()
+            
+            return jsonify({
+                'success': True,
+                'data': [site.to_dict() for site in sites]
+            }), 200
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/sites/<int:site_id>', methods=['GET'])
+    def get_site(site_id):
+        """Get a specific site by ID"""
+        try:
+            site = Site.query.get_or_404(site_id)
+            return jsonify({
+                'success': True,
+                'data': site.to_dict()
+            }), 200
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/sites', methods=['POST'])
+    def create_site():
+        """Create a new site"""
+        try:
+            data = request.get_json()
+            
+            site = Site(
+                name=data['name'],
+                location=data['location'],
+                description=data.get('description'),
+                start_date=datetime.strptime(data['start_date'], '%Y-%m-%d').date() if data.get('start_date') else None,
+                end_date=datetime.strptime(data['end_date'], '%Y-%m-%d').date() if data.get('end_date') else None,
+                status=data.get('status', 'active')
+            )
+            
+            db.session.add(site)
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'data': site.to_dict(),
+                'message': 'Site created successfully'
+            }), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/sites/<int:site_id>', methods=['PUT'])
+    def update_site(site_id):
+        """Update an existing site"""
+        try:
+            site = Site.query.get_or_404(site_id)
+            data = request.get_json()
+            
+            site.name = data.get('name', site.name)
+            site.location = data.get('location', site.location)
+            site.description = data.get('description', site.description)
+            site.status = data.get('status', site.status)
+            
+            if data.get('start_date'):
+                site.start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
+            if data.get('end_date'):
+                site.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
+            
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'data': site.to_dict(),
+                'message': 'Site updated successfully'
+            }), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/sites/<int:site_id>', methods=['DELETE'])
+    def delete_site(site_id):
+        """Delete a site"""
+        try:
+            site = Site.query.get_or_404(site_id)
+            db.session.delete(site)
+            db.session.commit()
+            return jsonify({
+                'success': True,
+                'message': 'Site deleted successfully'
+            }), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    # Worker Routes
+    @app.route('/api/workers', methods=['GET'])
+    def get_workers():
+        """Get all workers with optional site filter"""
+        try:
+            site_id = request.args.get('site_id')
+            is_active = request.args.get('is_active')
+            
+            query = Worker.query
+            
+            if site_id:
+                query = query.filter_by(site_id=site_id)
+            
+            if is_active is not None:
+                query = query.filter_by(is_active=is_active.lower() == 'true')
+            
+            workers = query.order_by(Worker.created_at.desc()).all()
+            
+            return jsonify({
+                'success': True,
+                'data': [worker.to_dict() for worker in workers]
+            }), 200
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/workers/<int:worker_id>', methods=['GET'])
+    def get_worker(worker_id):
+        """Get a specific worker by ID"""
+        try:
+            worker = Worker.query.get_or_404(worker_id)
+            return jsonify({
+                'success': True,
+                'data': worker.to_dict()
+            }), 200
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/workers', methods=['POST'])
+    def create_worker():
+        """Create a new worker"""
+        try:
+            data = request.get_json()
+            
+            worker = Worker(
+                name=data['name'],
+                phone=data.get('phone'),
+                email=data.get('email'),
+                position=data['position'],
+                daily_price=data['daily_price'],
+                site_id=data['site_id'],
+                is_active=data.get('is_active', True)
+            )
+            
+            db.session.add(worker)
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'data': worker.to_dict(),
+                'message': 'Worker created successfully'
+            }), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/workers/<int:worker_id>', methods=['PUT'])
+    def update_worker(worker_id):
+        """Update an existing worker"""
+        try:
+            worker = Worker.query.get_or_404(worker_id)
+            data = request.get_json()
+            
+            worker.name = data.get('name', worker.name)
+            worker.phone = data.get('phone', worker.phone)
+            worker.email = data.get('email', worker.email)
+            worker.position = data.get('position', worker.position)
+            worker.daily_price = data.get('daily_price', worker.daily_price)
+            worker.site_id = data.get('site_id', worker.site_id)
+            worker.is_active = data.get('is_active', worker.is_active)
+            
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'data': worker.to_dict(),
+                'message': 'Worker updated successfully'
+            }), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/workers/<int:worker_id>', methods=['DELETE'])
+    def delete_worker(worker_id):
+        """Delete a worker"""
+        try:
+            worker = Worker.query.get_or_404(worker_id)
+            db.session.delete(worker)
+            db.session.commit()
+            return jsonify({
+                'success': True,
+                'message': 'Worker deleted successfully'
+            }), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    # Attendance Routes
+    @app.route('/api/attendance', methods=['GET'])
+    def get_attendance():
+        """Get attendance records with date range and worker filters"""
+        try:
+            worker_id = request.args.get('worker_id')
+            site_id = request.args.get('site_id')
+            start_date = request.args.get('start_date')
+            end_date = request.args.get('end_date')
+            date = request.args.get('date')
+            
+            query = Attendance.query
+            
+            if worker_id:
+                query = query.filter_by(worker_id=worker_id)
+            
+            if site_id:
+                query = query.join(Worker).filter(Worker.site_id == site_id)
+            
+            if date:
+                date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+                query = query.filter(Attendance.date == date_obj)
+            
+            if start_date:
+                start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+                query = query.filter(Attendance.date >= start_date_obj)
+            
+            if end_date:
+                end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+                query = query.filter(Attendance.date <= end_date_obj)
+            
+            attendance_records = query.order_by(Attendance.date.desc()).all()
+            
+            return jsonify({
+                'success': True,
+                'data': [record.to_dict() for record in attendance_records]
+            }), 200
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/attendance/<int:attendance_id>', methods=['GET'])
+    def get_attendance_record(attendance_id):
+        """Get a specific attendance record by ID"""
+        try:
+            attendance = Attendance.query.get_or_404(attendance_id)
+            return jsonify({
+                'success': True,
+                'data': attendance.to_dict()
+            }), 200
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/attendance', methods=['POST'])
+    def create_attendance():
+        """Create a new attendance record"""
+        try:
+            data = request.get_json()
+            
+            attendance = Attendance(
+                worker_id=data['worker_id'],
+                date=datetime.strptime(data['date'], '%Y-%m-%d').date(),
+                check_in_time=datetime.strptime(data['check_in_time'], '%H:%M').time() if data.get('check_in_time') else None,
+                check_out_time=datetime.strptime(data['check_out_time'], '%H:%M').time() if data.get('check_out_time') else None,
+                hours_worked=data.get('hours_worked', 0.0),
+                is_present=data.get('is_present', True),
+                notes=data.get('notes')
+            )
+            
+            db.session.add(attendance)
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'data': attendance.to_dict(),
+                'message': 'Attendance record created successfully'
+            }), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/attendance/<int:attendance_id>', methods=['PUT'])
+    def update_attendance(attendance_id):
+        """Update an existing attendance record"""
+        try:
+            attendance = Attendance.query.get_or_404(attendance_id)
+            data = request.get_json()
+            
+            attendance.worker_id = data.get('worker_id', attendance.worker_id)
+            attendance.is_present = data.get('is_present', attendance.is_present)
+            attendance.notes = data.get('notes', attendance.notes)
+            attendance.hours_worked = data.get('hours_worked', attendance.hours_worked)
+            
+            if data.get('date'):
+                attendance.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+            if data.get('check_in_time'):
+                attendance.check_in_time = datetime.strptime(data['check_in_time'], '%H:%M').time()
+            if data.get('check_out_time'):
+                attendance.check_out_time = datetime.strptime(data['check_out_time'], '%H:%M').time()
+            
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'data': attendance.to_dict(),
+                'message': 'Attendance record updated successfully'
+            }), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/attendance/<int:attendance_id>', methods=['DELETE'])
+    def delete_attendance(attendance_id):
+        """Delete an attendance record"""
+        try:
+            attendance = Attendance.query.get_or_404(attendance_id)
+            db.session.delete(attendance)
+            db.session.commit()
+            return jsonify({
+                'success': True,
+                'message': 'Attendance record deleted successfully'
+            }), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    # Daily Activity Routes
+    @app.route('/api/daily-activities', methods=['GET'])
+    def get_daily_activities():
+        """Get daily activities with date and site filters"""
+        try:
+            site_id = request.args.get('site_id')
+            start_date = request.args.get('start_date')
+            end_date = request.args.get('end_date')
+            date = request.args.get('date')
+            
+            query = DailyActivity.query
+            
+            if site_id:
+                query = query.filter_by(site_id=site_id)
+            
+            if date:
+                date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+                query = query.filter(DailyActivity.date == date_obj)
+            
+            if start_date:
+                start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+                query = query.filter(DailyActivity.date >= start_date_obj)
+            
+            if end_date:
+                end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+                query = query.filter(DailyActivity.date <= end_date_obj)
+            
+            activities = query.order_by(DailyActivity.date.desc()).all()
+            
+            return jsonify({
+                'success': True,
+                'data': [activity.to_dict() for activity in activities]
+            }), 200
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/daily-activities/<int:activity_id>', methods=['GET'])
+    def get_daily_activity(activity_id):
+        """Get a specific daily activity by ID"""
+        try:
+            activity = DailyActivity.query.get_or_404(activity_id)
+            return jsonify({
+                'success': True,
+                'data': activity.to_dict()
+            }), 200
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/daily-activities', methods=['POST'])
+    def create_daily_activity():
+        """Create a new daily activity"""
+        try:
+            data = request.get_json()
+            
+            activity = DailyActivity(
+                site_id=data['site_id'],
+                date=datetime.strptime(data['date'], '%Y-%m-%d').date(),
+                activity_name=data['activity_name'],
+                description=data.get('description'),
+                quantity=data.get('quantity', 1.0),
+                unit_price=data['unit_price'],
+                total_price=data['total_price'],
+                workers_involved=json.dumps(data.get('workers_involved', []))
+            )
+            
+            db.session.add(activity)
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'data': activity.to_dict(),
+                'message': 'Daily activity created successfully'
+            }), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/daily-activities/<int:activity_id>', methods=['PUT'])
+    def update_daily_activity(activity_id):
+        """Update an existing daily activity"""
+        try:
+            activity = DailyActivity.query.get_or_404(activity_id)
+            data = request.get_json()
+            
+            activity.site_id = data.get('site_id', activity.site_id)
+            activity.activity_name = data.get('activity_name', activity.activity_name)
+            activity.description = data.get('description', activity.description)
+            activity.quantity = data.get('quantity', activity.quantity)
+            activity.unit_price = data.get('unit_price', activity.unit_price)
+            activity.total_price = data.get('total_price', activity.total_price)
+            activity.workers_involved = json.dumps(data.get('workers_involved', []))
+            
+            if data.get('date'):
+                activity.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+            
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'data': activity.to_dict(),
+                'message': 'Daily activity updated successfully'
+            }), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/daily-activities/<int:activity_id>', methods=['DELETE'])
+    def delete_daily_activity(activity_id):
+        """Delete a daily activity"""
+        try:
+            activity = DailyActivity.query.get_or_404(activity_id)
+            db.session.delete(activity)
+            db.session.commit()
+            return jsonify({
+                'success': True,
+                'message': 'Daily activity deleted successfully'
+            }), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    # Cost Routes
+    @app.route('/api/costs', methods=['GET'])
+    def get_costs():
+        """Get costs with various filters"""
+        try:
+            site_id = request.args.get('site_id')
+            worker_id = request.args.get('worker_id')
+            cost_type = request.args.get('cost_type')
+            category = request.args.get('category')
+            start_date = request.args.get('start_date')
+            end_date = request.args.get('end_date')
+            date = request.args.get('date')
+            
+            query = Cost.query
+            
+            if site_id:
+                query = query.filter_by(site_id=site_id)
+            
+            if worker_id:
+                query = query.filter_by(worker_id=worker_id)
+            
+            if cost_type:
+                query = query.filter_by(cost_type=cost_type)
+            
+            if category:
+                query = query.filter_by(category=category)
+            
+            if date:
+                date_obj = datetime.strptime(date, '%Y-%m-%d').date()
+                query = query.filter(Cost.date == date_obj)
+            
+            if start_date:
+                start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+                query = query.filter(Cost.date >= start_date_obj)
+            
+            if end_date:
+                end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+                query = query.filter(Cost.date <= end_date_obj)
+            
+            costs = query.order_by(Cost.date.desc()).all()
+            
+            return jsonify({
+                'success': True,
+                'data': [cost.to_dict() for cost in costs]
+            }), 200
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/costs/<int:cost_id>', methods=['GET'])
+    def get_cost(cost_id):
+        """Get a specific cost by ID"""
+        try:
+            cost = Cost.query.get_or_404(cost_id)
+            return jsonify({
+                'success': True,
+                'data': cost.to_dict()
+            }), 200
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/costs', methods=['POST'])
+    def create_cost():
+        """Create a new cost"""
+        try:
+            data = request.get_json()
+            
+            cost = Cost(
+                site_id=data['site_id'],
+                worker_id=data.get('worker_id'),
+                daily_activity_id=data.get('daily_activity_id'),
+                cost_type=data['cost_type'],
+                description=data['description'],
+                amount=data['amount'],
+                date=datetime.strptime(data['date'], '%Y-%m-%d').date(),
+                category=data.get('category')
+            )
+            
+            db.session.add(cost)
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'data': cost.to_dict(),
+                'message': 'Cost created successfully'
+            }), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/costs/<int:cost_id>', methods=['PUT'])
+    def update_cost(cost_id):
+        """Update an existing cost"""
+        try:
+            cost = Cost.query.get_or_404(cost_id)
+            data = request.get_json()
+            
+            cost.site_id = data.get('site_id', cost.site_id)
+            cost.worker_id = data.get('worker_id', cost.worker_id)
+            cost.daily_activity_id = data.get('daily_activity_id', cost.daily_activity_id)
+            cost.cost_type = data.get('cost_type', cost.cost_type)
+            cost.description = data.get('description', cost.description)
+            cost.amount = data.get('amount', cost.amount)
+            cost.category = data.get('category', cost.category)
+            
+            if data.get('date'):
+                cost.date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+            
+            db.session.commit()
+            
+            return jsonify({
+                'success': True,
+                'data': cost.to_dict(),
+                'message': 'Cost updated successfully'
+            }), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/costs/<int:cost_id>', methods=['DELETE'])
+    def delete_cost(cost_id):
+        """Delete a cost"""
+        try:
+            cost = Cost.query.get_or_404(cost_id)
+            db.session.delete(cost)
+            db.session.commit()
+            return jsonify({
+                'success': True,
+                'message': 'Cost deleted successfully'
+            }), 200
+        except Exception as e:
+            db.session.rollback()
             return jsonify({'success': False, 'error': str(e)}), 500
 
     # Error handlers

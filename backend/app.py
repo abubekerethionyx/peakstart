@@ -1,19 +1,30 @@
 import os
-from flask import Flask, jsonify
+import sys
+import logging
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_migrate import Migrate
 from datetime import datetime
 from extensions import db  # Import db from extensions
 
+# -------------------------------------------------
+# Setup logging so it always prints to stdout
+# -------------------------------------------------
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+
+logger = logging.getLogger(__name__)
+
 # Initialize Flask app
 app = Flask(__name__)
 
 # Configuration
-# Define the absolute path for the database
 basedir = os.path.abspath(os.path.dirname(__file__))
 instance_path = os.path.join(basedir, 'instance')
 
-# Ensure the instance directory exists
 if not os.path.exists(instance_path):
     os.makedirs(instance_path)
 
@@ -24,29 +35,40 @@ app.config['SECRET_KEY'] = 'your-secret-key-here'
 # Initialize extensions
 db.init_app(app)
 migrate = Migrate(app, db)
-CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True, methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"], allow_headers=["Content-Type", "Authorization"])
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True,
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization"])
 
-# Import models and routes after app and db are defined and initialized
+# Import models and routes after app and db are defined
 import models
-from routes import register_routes # Import register_routes function
-
-# Register routes with the app instance
+from routes import register_routes
 register_routes(app)
 
 # Create database tables
 with app.app_context():
     db.create_all()
 
-# Remove generic home route to avoid conflict
-# @app.route('/')
-# def home():
-#     return jsonify({
-#         "message": "PeakStart Construction API",
-#         "version": "1.0.0",
-#         "status": "running"
-#     })
+# -------------------------------------------------
+# Logging middleware for requests & responses
+# -------------------------------------------------
+@app.before_request
+def log_request():
+    logger.info(f"➡️ {request.method} {request.path}")
 
-# Remove generic health_check route to avoid conflict
+@app.after_request
+def log_response(response):
+    logger.info(f"⬅️ {response.status} {request.method} {request.path}")
+    return response
+
+# -------------------------------------------------
+# Error handler (catch all)
+# -------------------------------------------------
+@app.errorhandler(Exception)
+def handle_exception(e):
+    logger.exception("🔥 Internal Server Error")
+    return jsonify({"error": "Internal Server Error"}), 500
+
+# Health check
 @app.route('/health')
 def health_check():
     return jsonify({

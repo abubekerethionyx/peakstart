@@ -82,7 +82,7 @@ interface ApiResponse<T> {
   message?: string;
 }
 
-const API_BASE_URL = 'https://peak.peakstartgc.com';
+const API_BASE_URL = 'http://localhost:5000';
 
 // Home Page APIs
 export const getHomeStats = async (): Promise<ApiResponse<any[]>> => {
@@ -619,5 +619,368 @@ export const deleteContactSubmission = async (id: number): Promise<ApiResponse<a
   } catch (error: any) {
     console.error(`Error deleting contact submission with ID ${id}:`, error);
     return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+// Construction Management APIs
+// Sites APIs
+export const getSites = async (status?: string, startDate?: string, endDate?: string): Promise<ApiResponse<any[]>> => {
+  try {
+    let url = `${API_BASE_URL}/api/sites`;
+    const params = new URLSearchParams();
+    if (status && status !== 'All') {
+      params.append('status', status);
+    }
+    if (startDate) {
+      params.append('start_date', startDate);
+    }
+    if (endDate) {
+      params.append('end_date', endDate);
+    }
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    const response = await fetch(url);
+    return response.json();
+  } catch (error: any) {
+    console.error("Error fetching sites:", error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+export const getSiteById = async (id: number): Promise<ApiResponse<any>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/sites/${id}`);
+    return response.json();
+  } catch (error: any) {
+    console.error(`Error fetching site with ID ${id}:`, error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+export const createSite = async (siteData: any): Promise<ApiResponse<any>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/sites`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(siteData),
+    });
+    return response.json();
+  } catch (error: any) {
+    console.error("Error creating site:", error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+export const updateSite = async (id: number, siteData: any): Promise<ApiResponse<any>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/sites/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(siteData),
+    });
+    return response.json();
+  } catch (error: any) {
+    console.error(`Error updating site with ID ${id}:`, error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+export const deleteSite = async (id: number): Promise<ApiResponse<any>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/sites/${id}`, {
+      method: 'DELETE',
+    });
+    return response.json();
+  } catch (error: any) {
+    console.error(`Error deleting site with ID ${id}:`, error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+// Workers APIs
+export const getWorkers = async (siteId?: number, isActive?: boolean): Promise<ApiResponse<any[]>> => {
+  try {
+    let url = `${API_BASE_URL}/api/workers`;
+    const params = new URLSearchParams();
+    if (siteId) {
+      params.append('site_id', siteId.toString());
+    }
+    if (isActive !== undefined) {
+      params.append('is_active', isActive.toString());
+    }
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    const response = await fetch(url);
+    return response.json();
+  } catch (error: any) {
+    console.error("Error fetching workers:", error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+export const getWorkerById = async (id: number): Promise<ApiResponse<any>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/workers/${id}`);
+    return response.json();
+  } catch (error: any) {
+    console.error(`Error fetching worker with ID ${id}:`, error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+export const createWorker = async (workerData: any): Promise<ApiResponse<any>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/workers`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(workerData),
+    });
+    return response.json();
+  } catch (error: any) {
+    console.error("Error creating worker:", error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+export const updateWorker = async (id: number, workerData: any): Promise<ApiResponse<any>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/workers/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(workerData),
+    });
+    return response.json();
+  } catch (error: any) {
+    console.error(`Error updating worker with ID ${id}:`, error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+export const deleteWorker = async (id: number): Promise<ApiResponse<any>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/workers/${id}`, {
+      method: 'DELETE',
+    });
+    return response.json();
+  } catch (error: any) {
+    console.error(`Error deleting worker with ID ${id}:`, error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+// Daily Activities APIs
+export const getDailyActivities = async (siteId?: number, startDate?: string, endDate?: string, date?: string): Promise<ApiResponse<any[]>> => {
+  try {
+    let url = `${API_BASE_URL}/api/daily-activities`;
+    const params = new URLSearchParams();
+    if (siteId) {
+      params.append('site_id', siteId.toString());
+    }
+    if (startDate) {
+      params.append('start_date', startDate);
+    }
+    if (endDate) {
+      params.append('end_date', endDate);
+    }
+    if (date) {
+      params.append('date', date);
+    }
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    const response = await fetch(url);
+    return response.json();
+  } catch (error: any) {
+    console.error("Error fetching daily activities:", error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+export const getDailyActivityById = async (id: number): Promise<ApiResponse<any>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/daily-activities/${id}`);
+    return response.json();
+  } catch (error: any) {
+    console.error(`Error fetching daily activity with ID ${id}:`, error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+export const createDailyActivity = async (activityData: any): Promise<ApiResponse<any>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/daily-activities`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(activityData),
+    });
+    return response.json();
+  } catch (error: any) {
+    console.error("Error creating daily activity:", error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+export const updateDailyActivity = async (id: number, activityData: any): Promise<ApiResponse<any>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/daily-activities/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(activityData),
+    });
+    return response.json();
+  } catch (error: any) {
+    console.error(`Error updating daily activity with ID ${id}:`, error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+export const deleteDailyActivity = async (id: number): Promise<ApiResponse<any>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/daily-activities/${id}`, {
+      method: 'DELETE',
+    });
+    return response.json();
+  } catch (error: any) {
+    console.error(`Error deleting daily activity with ID ${id}:`, error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+// Costs APIs
+export const getCosts = async (siteId?: number, workerId?: number, costType?: string, category?: string, startDate?: string, endDate?: string, date?: string): Promise<ApiResponse<any[]>> => {
+  try {
+    let url = `${API_BASE_URL}/api/costs`;
+    const params = new URLSearchParams();
+    if (siteId) {
+      params.append('site_id', siteId.toString());
+    }
+    if (workerId) {
+      params.append('worker_id', workerId.toString());
+    }
+    if (costType) {
+      params.append('cost_type', costType);
+    }
+    if (category) {
+      params.append('category', category);
+    }
+    if (startDate) {
+      params.append('start_date', startDate);
+    }
+    if (endDate) {
+      params.append('end_date', endDate);
+    }
+    if (date) {
+      params.append('date', date);
+    }
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    const response = await fetch(url);
+    return response.json();
+  } catch (error: any) {
+    console.error("Error fetching costs:", error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+export const getCostById = async (id: number): Promise<ApiResponse<any>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/costs/${id}`);
+    return response.json();
+  } catch (error: any) {
+    console.error(`Error fetching cost with ID ${id}:`, error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+export const createCost = async (costData: any): Promise<ApiResponse<any>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/costs`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(costData),
+    });
+    return response.json();
+  } catch (error: any) {
+    console.error("Error creating cost:", error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+export const updateCost = async (id: number, costData: any): Promise<ApiResponse<any>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/costs/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(costData),
+    });
+    return response.json();
+  } catch (error: any) {
+    console.error(`Error updating cost with ID ${id}:`, error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+export const deleteCost = async (id: number): Promise<ApiResponse<any>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/costs/${id}`, {
+      method: 'DELETE',
+    });
+    return response.json();
+  } catch (error: any) {
+    console.error(`Error deleting cost with ID ${id}:`, error);
+    return { success: false, error: error.message || "An unexpected error occurred" };
+  }
+};
+
+// Generic API client for axios-like usage
+export const api = {
+  get: async (url: string) => {
+    const response = await fetch(`${API_BASE_URL}/api${url}`);
+    return { data: await response.json() };
+  },
+  post: async (url: string, data: any) => {
+    const response = await fetch(`${API_BASE_URL}/api${url}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return { data: await response.json() };
+  },
+  put: async (url: string, data: any) => {
+    const response = await fetch(`${API_BASE_URL}/api${url}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return { data: await response.json() };
+  },
+  delete: async (url: string) => {
+    const response = await fetch(`${API_BASE_URL}${url}`, {
+      method: 'DELETE',
+    });
+    return { data: await response.json() };
   }
 };

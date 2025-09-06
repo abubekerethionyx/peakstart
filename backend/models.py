@@ -205,3 +205,159 @@ class Award(db.Model):
             'year': self.year,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
+
+# Site Model
+class Site(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    location = db.Column(db.String(300), nullable=False)
+    description = db.Column(db.Text)
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
+    status = db.Column(db.String(50), default='active')  # active, completed, on_hold
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    workers = db.relationship('Worker', backref='site', lazy=True, cascade='all, delete-orphan')
+    daily_activities = db.relationship('DailyActivity', backref='site', lazy=True, cascade='all, delete-orphan')
+    costs = db.relationship('Cost', backref='site', lazy=True, cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'location': self.location,
+            'description': self.description,
+            'start_date': self.start_date.isoformat() if self.start_date else None,
+            'end_date': self.end_date.isoformat() if self.end_date else None,
+            'status': self.status,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+# Worker Model
+class Worker(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    phone = db.Column(db.String(50))
+    email = db.Column(db.String(200))
+    position = db.Column(db.String(100), nullable=False)
+    daily_price = db.Column(db.Float, nullable=False)
+    site_id = db.Column(db.Integer, db.ForeignKey('site.id'), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    attendances = db.relationship('Attendance', backref='worker', lazy=True, cascade='all, delete-orphan')
+    costs = db.relationship('Cost', backref='worker', lazy=True, cascade='all, delete-orphan')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'phone': self.phone,
+            'email': self.email,
+            'position': self.position,
+            'daily_price': self.daily_price,
+            'site_id': self.site_id,
+            'site_name': self.site.name if self.site else None,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+# Attendance Model
+class Attendance(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    worker_id = db.Column(db.Integer, db.ForeignKey('worker.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    check_in_time = db.Column(db.Time)
+    check_out_time = db.Column(db.Time)
+    hours_worked = db.Column(db.Float, default=0.0)
+    is_present = db.Column(db.Boolean, default=True)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'worker_id': self.worker_id,
+            'worker_name': self.worker.name if self.worker else None,
+            'site_name': self.worker.site.name if self.worker and self.worker.site else None,
+            'date': self.date.isoformat() if self.date else None,
+            'check_in_time': self.check_in_time.strftime('%H:%M') if self.check_in_time else None,
+            'check_out_time': self.check_out_time.strftime('%H:%M') if self.check_out_time else None,
+            'hours_worked': self.hours_worked,
+            'is_present': self.is_present,
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+# Daily Activity Model
+class DailyActivity(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    site_id = db.Column(db.Integer, db.ForeignKey('site.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    activity_name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    quantity = db.Column(db.Float, default=1.0)
+    unit_price = db.Column(db.Float, nullable=False)
+    total_price = db.Column(db.Float, nullable=False)
+    workers_involved = db.Column(db.Text)  # JSON string of worker IDs
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'site_id': self.site_id,
+            'site_name': self.site.name if self.site else None,
+            'date': self.date.isoformat() if self.date else None,
+            'activity_name': self.activity_name,
+            'description': self.description,
+            'quantity': self.quantity,
+            'unit_price': self.unit_price,
+            'total_price': self.total_price,
+            'workers_involved': self.workers_involved,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+# Cost Model
+class Cost(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    site_id = db.Column(db.Integer, db.ForeignKey('site.id'), nullable=False)
+    worker_id = db.Column(db.Integer, db.ForeignKey('worker.id'), nullable=True)
+    daily_activity_id = db.Column(db.Integer, db.ForeignKey('daily_activity.id'), nullable=True)
+    cost_type = db.Column(db.String(50), nullable=False)  # worker, activity, material, equipment, other
+    description = db.Column(db.Text, nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    category = db.Column(db.String(100))  # labor, materials, equipment, overhead, etc.
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    daily_activity = db.relationship('DailyActivity', backref='costs', lazy=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'site_id': self.site_id,
+            'site_name': self.site.name if self.site else None,
+            'worker_id': self.worker_id,
+            'worker_name': self.worker.name if self.worker else None,
+            'daily_activity_id': self.daily_activity_id,
+            'activity_name': self.daily_activity.activity_name if self.daily_activity else None,
+            'cost_type': self.cost_type,
+            'description': self.description,
+            'amount': self.amount,
+            'date': self.date.isoformat() if self.date else None,
+            'category': self.category,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }

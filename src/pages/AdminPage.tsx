@@ -1,13 +1,5 @@
 import React, { useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import ServiceForm from '../components/admin/ServiceForm';
-import ProjectForm from '../components/admin/ProjectForm';
-import BlogPostForm from '../components/admin/BlogPostForm';
-import TeamMemberForm from '../components/admin/TeamMemberForm';
-import TestimonialForm from '../components/admin/TestimonialForm';
-import CompanyStatForm from '../components/admin/CompanyStatForm';
-import CertificationForm from '../components/admin/CertificationForm';
-import AwardForm from '../components/admin/AwardForm';
 
 const AdminPage: React.FC = () => {
   const location = useLocation();
@@ -32,60 +24,76 @@ const AdminPage: React.FC = () => {
           >
             Dashboard
           </Link>
-          <Link
-            to="/admin/services"
-            className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/services' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
-          >
-            Services
-          </Link>
-          <Link
-            to="/admin/projects"
-            className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/projects' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
-          >
-            Projects
-          </Link>
-          <Link
-            to="/admin/blogposts"
-            className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/blogposts' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
-          >
-            Blog Posts
-          </Link>
-          <Link
-            to="/admin/team"
-            className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/team' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
-          >
-            Team Members
-          </Link>
-          <Link
-            to="/admin/testimonials"
-            className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/testimonials' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
-          >
-            Testimonials
-          </Link>
-          <Link
-            to="/admin/stats"
-            className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/stats' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
-          >
-            Company Stats
-          </Link>
-          <Link
-            to="/admin/certifications"
-            className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/certifications' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
-          >
-            Certifications
-          </Link>
-          <Link
-            to="/admin/awards"
-            className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/awards' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
-          >
-            Awards
-          </Link>
-          <Link
-            to="/admin/contactsubmissions"
-            className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/contactsubmissions' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
-          >
-            Contact Submissions
-          </Link>
+          
+          {/* Site Management Section */}
+          <div className="pt-4">
+            <h3 className="text-sm font-semibold text-blue-200 uppercase tracking-wider mb-2">Site Management</h3>
+            <Link
+              to="/admin/sites"
+              className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname.startsWith('/admin/sites') ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
+            >
+              Construction Sites
+            </Link>
+          </div>
+
+          {/* Website Administration Section */}
+          <div className="pt-4">
+            <h3 className="text-sm font-semibold text-blue-200 uppercase tracking-wider mb-2">Website Content</h3>
+            <Link
+              to="/admin/services"
+              className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/services' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
+            >
+              Services
+            </Link>
+            <Link
+              to="/admin/projects"
+              className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/projects' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
+            >
+              Projects
+            </Link>
+            <Link
+              to="/admin/blogposts"
+              className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/blogposts' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
+            >
+              Blog Posts
+            </Link>
+            <Link
+              to="/admin/team"
+              className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/team' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
+            >
+              Team Members
+            </Link>
+            <Link
+              to="/admin/testimonials"
+              className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/testimonials' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
+            >
+              Testimonials
+            </Link>
+            <Link
+              to="/admin/stats"
+              className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/stats' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
+            >
+              Company Stats
+            </Link>
+            <Link
+              to="/admin/certifications"
+              className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/certifications' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
+            >
+              Certifications
+            </Link>
+            <Link
+              to="/admin/awards"
+              className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/awards' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
+            >
+              Awards
+            </Link>
+            <Link
+              to="/admin/contactsubmissions"
+              className={`block px-4 py-2 rounded-lg text-lg transition-colors duration-200 ${location.pathname === '/admin/contactsubmissions' ? 'bg-blue-800' : 'hover:bg-blue-800'}`}
+            >
+              Contact Submissions
+            </Link>
+          </div>
         </nav>
       </aside>
 
